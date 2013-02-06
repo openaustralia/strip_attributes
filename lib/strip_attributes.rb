@@ -6,10 +6,11 @@ module ActiveModel::Validations::HelperMethods
     before_validation do |record|
       allow_empty = options.delete(:allow_empty) if options
 
-      attributes = StripAttributes.narrow(record.attributes, options)
-      attributes.each do |attr, value|
+      attribute_names = StripAttributes.narrow(record.attribute_names, options)
+      attribute_names.each do |attribute_name|
+        value = record[attribute_name]
         if value.respond_to?(:strip)
-          record[attr] = (value.blank? && !allow_empty) ? nil : value.strip
+          record[attribute_name] = (value.blank? && !allow_empty) ? nil : value.strip
         end
       end
     end
@@ -26,16 +27,17 @@ end
 module StripAttributes
   # Necessary because Rails has removed the narrowing of attributes using :only
   # and :except on Base#attributes
-  def self.narrow(attributes, options)
+  def self.narrow(attribute_names, options)
     if options.nil? || options.empty?
-      attributes
+      attribute_names
     else
+      attribute_names = attribute_names.collect { |attribute| attribute.to_s }
       if except = options[:except]
         except = Array(except).collect { |attribute| attribute.to_s }
-        attributes.except(*except)
+        attribute_names - except
       elsif only = options[:only]
         only = Array(only).collect { |attribute| attribute.to_s }
-        attributes.slice(*only)
+        attribute_names & only
       else
         raise ArgumentError, "Options does not specify :except or :only (#{options.keys.inspect})"
       end
