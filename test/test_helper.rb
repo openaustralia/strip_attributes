@@ -33,6 +33,10 @@ class Tableless
     @attribute_names ||= []
   end
 
+  def attribute_names
+    self.class.attribute_names
+  end
+
   def self.attributes(*names)
     attr_accessor *names
     attribute_names.concat names
